@@ -45,12 +45,36 @@ noise $A^0_t ∼ N (0, I)$
 $$A^τ_{t+δ} = A^τ_t + δv_θ(A^τ_t, o_t)$$
 - $δ$ is the integration step size
 
+Incorporating the flow matching timestep: For each noisy action $a^τ_{t′}$ ,corresponding embedding that is fed into the
+transformer is $W_3 · swish(W_2 · concat(W_1 · a^τ_{t′}, ϕ(τ)))$
+- $ϕ:  \mathbb{R} \mapsto \mathbb{R}^w$ sinusoidal positional encoding function
+- $W_1 ∈ \mathbb{R}^{w×d}$ ; $W_2 ∈ \mathbb{R}^{w×2w}$ ; $W_3 ∈ \mathbb{R}^{w×w}$
+- $concat(W_1 ⋅ a^τ_{t′},ϕ(τ)) ∈ \mathbb{R}^{2w}$ connect 
+- $swish()$ active function
+- $w$ embedding dimension; $d$ action dimension
+
+Attention mask: π0 uses a blockwise causal attention mask
+with 3 blocks: $[I, ℓ_t], [q_t], and [a^τ_t, ..., a^τ_{t+H−1}]$
+- the tokens in each block **cannot** attend to the tokens in future blocks
+
+Action expert: 
+- each token is routed to one of the experts
+- the weights interact only through the transformer’s self-attention layers
+Sampling the flow matching timestep:
+- a timestep sampling distribution that emphasizes low timesteps (high noise levels)
+
+Inference:
+- model takes an observation ot and the noisy actions $A^τ_t$
+- outputs the vector field that needs to be integrated to obtain the next
+flow matching step, $v_t^τ$
+- encode each of the images $I$, run a forward pass on the tokens corresponding to $o_t$
+- then run 10 steps of flow matching, each step requires running a
+forward pass on the tokens corresponding to $A^τ_t$
 #### Training Recipe
 ##### Pre-training
 To down weight over-represented combinations: each task-robot combination weighted by $n^{0.43}$ 
 
-For robots with lower dimensional configuration and action spaces: **zero-pad** the
-configuration and action vectors
+For robots with lower dimensional configuration and action spaces: **zero-pad** the configuration and action vectors
 
 ### Experimental Evaluation
 research questions:
@@ -66,3 +90,6 @@ do not yet provide a comprehensive understanding of how the pre-training dataset
 
 it remains to be seen how much positive transfer there is in combining highly diverse data particularly from different tasks and different robots  
 - it is left for future work to understand whether this universality extends to much more distinct domains
+
+
+## 
