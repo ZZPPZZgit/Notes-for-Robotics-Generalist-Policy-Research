@@ -18,7 +18,7 @@ Challenges:
 - relied heavily on delicate strategies for curating pre-training and post-training data
 
 ### Structure 
-![项目截图](.\Images\pi0structure.png)
+![项目截图](Images/pi0structure.png?raw=true)
 
 #### The $π_0$ Model Key Algorithms
 data distribution: $p(A_t|o_t)$ \
