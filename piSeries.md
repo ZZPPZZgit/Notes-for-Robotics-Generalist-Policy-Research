@@ -265,3 +265,105 @@ episode resets
 - more sophisticated exploration methods
 - extending the approach into a fully concurrent online RL
 framework is a promising direction for future work
+
+## $π_{0.7}$: a Steerable Generalist Robotic Foundation
+
+### Highlight
+Model with Emergent Capabilities
+- use
+diverse context conditioning during training
+- additional multimodal
+information that also describes the manner or strategy in which
+it should do it
+  - task performance
+  - subgoal images
+
+### Background
+- Generalist robot manipulation policies
+  - memory
+  - hierarchy for long-horizon planning 
+  - goal image conditioning
+- Generalization across tasks and embodiments
+  - leveraging human video data
+  - directly leveraging Internet pre-trained foundation models during training or inference
+  - improving cross-embodiment transfer between robots
+  - proposed specialized hand-held
+devices that can be used to collect data
+- Prompting robots with subgoal images
+  - allow the model to be prompted using goal images
+
+### Structure
+![项目截图](Images/pi0.7structure.png?raw=true)
+#### Training
+starting from a pre-trained vision language model (VLM) backbone
+  - dataset $\mathcal{D}$ contains robot trajectories: observations $o_t$ and actions $a_t$
+  - VLM: knowledge insulation(KI) training recipe
+    - VLM backbone is supervised
+with FAST tokens
+    - gradients from the action expert **do not** flow into the VLM backbone
+    - training example for the VLA is accompanied by a prompt or context, denoted with $\mathcal{C}_t$
+
+##### prompt $\mathcal{C}_t$
+During training, randomly **dropped out**, which provides π0.7 with the flexibility to use any
+subset of the prompt components at test time
+- Subtask instructions
+  - During inference, $\hat{ℓ}_t$ may be produced by a learned high-level policy or a human
+- Subgoal images
+  - multi-view subgoals $g_t$
+  - produced by lightweight world model $g_ψ$
+    - trained with the objective$max_ψE_{D_g} [\mathcal{L}_{CFM} (g_t^⋆, g_ψ(o_t, \hat{ℓ}_t, m))]$
+    - $\mathcal{L}_{CFM}$ standard flow matching loss
+  - The image frames at the end of the segments serve as the ground-truth subgoal
+  - refresh the subgoal images whenever the semantic intent changes, or after $∆$ = 4 seconds
+- Episode metadata
+  - to leverage lower quality demonstrations (including failures) and even autonomous data from prior models
+  - metadata $m$
+- Control mode 
+  - for the low level action execution
+  - include both joint level and end-effector actions
+
+##### Data set
+make heavy use of suboptimal robot data in training
+
+#### Architecture
+majot modifications: 
+- history vision encoder from MEM
+- visual subgoal images in the context
+
+employ a block-causal masking scheme
+- observation tokens and the subgoal image tokens use bidirectional attention
+- following text tokens use causal attention
+- embeds the state using a linear projection that
+maps the state dimension to the backbone dimension
+- action expert 50 tokens attend bidirectionally to each other
+
+### Experimental Evaluation
+- Out-of-the-box performance on challenging tasks
+- Instruction following
+  - can follow instructions that go against dataset biases
+- Cross-embodiment transfer
+  - successful transfer often requires the policy to discover new manipulation strategies suited to the target morphology rather than simply replicate the source behavior
+- Compositional task generalization
+  - can be coached to perform new longer horizon tasks purely with language
+- Can π0.7 learn effectively from diverse and mixed-quality data
+
+### Future Work:
+determining what is
+truly novel becomes difficult, and the model may well be
+achieving generalization primarily by “remixing” skills and
+behaviors from other situations
+- dataset contains so many different
+scenes and behaviors that potentially related skills may well
+be present elsewhere in the data
+
+
+## Development of $\pi$ series
+
+| Model | Core Innovation | Progress |
+|---|---|---|
+| $π_0$ | VLM backbone + **flow matching** for continuous actions; separate lightweight **action expert**; 50-step action chunks | Generalist policy across diverse robots/tasks; dexterous manipulation and language following out of the box |
+| $π_{0.5}$ | **Open-world generalization** via diverse co-training (web data, cross-embodiment) + hybrid multi-modal examples (subtasks, detections, actions); high-level subtask inference + low-level control | Generalizes to entirely **new homes**; generalization scales with number of training environments; outperforms $π_0$ |
+| $π^*_{0.6}$ | Learns from **experience via RL** (RECAP): advantage-conditioned policy trained on autonomous rollouts + expert corrections, with a learned value function | Breaks the imitation-learning ceiling: **surpasses demonstration quality**, keeps improving through real-world deployment |
+| $π_{0.7}$ | **Steerable** via diverse context conditioning (instructions, subgoal images from a world model, episode metadata, control mode); knowledge-insulation training; leverages **suboptimal / mixed-quality data** | Emergent capabilities: follows counter-bias instructions, **cross-embodiment transfer**, compositional generalization to new long-horizon tasks |
+
+**Series evolution:** scale up data & generalization ($π_0$ → $π_{0.5}$) → improve beyond demonstrations via RL ($π^*_{0.6}$) → steerability & emergent skills from heterogeneous data ($π_{0.7}$).
