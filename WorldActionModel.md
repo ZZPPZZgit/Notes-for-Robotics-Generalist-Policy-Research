@@ -136,3 +136,6 @@ Faster Inference
 Long-horizon Reasoning
 High-Precision Tasks
 Embodiment Design for WAMs
+
+## AHA-WAM:Asynchronous Horizon-Adaptive World-Action Modeling with Observation-Guided Context Routing
+[AHA-WAMNotes](AHAWAM.md)
